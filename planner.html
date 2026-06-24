@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable Planner</title>
+    <!-- Bootstrap CSS for responsive design -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 1000px; margin-top: 50px; }
+        .week-view { display: flex; flex-wrap: wrap; gap: 10px; }
+        .day-column { flex: 1; min-width: 200px; border: 1px solid #ddd; padding: 10px; background: white; }
+        .event { background: #e9ecef; margin-bottom: 5px; padding: 5px; border-radius: 4px; }
+            #logo{
+            height: 150px;
+            width: 150px;
+            border-radius: 100px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 3px solid #3498db;
+            margin-bottom: 20px;
+            }
+
+        #logo:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            filter: brightness(1.1);
+        }
+        body{
+            background: linear-gradient(85deg,#14001b,#20002c,#cbb4d4);
+        }
+        #title{
+            height: auto;
+            justify-items: center; 
+            text-align: center;
+            padding: 20px;
+            font-family: sreda;
+            color: rgb(255, 252, 252);
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <center><img src="/logo.png" alt="logo" id="logo"></center>
+        <h1 class="text-center mb-4" id="title">Timetable Planner</h1>
+        
+        <!-- Submission Form -->
+        <div class="card mb-4" style="font-family: sreda;">
+            <div class="card-header">
+                <h5>Add a New Event</h5>
+            </div>
+            <div class="card-body">
+                <form id="eventForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="title" class="form-label">Event Title</label>
+                            <input type="text" class="form-control" id="title" placeholder="e.g., Math Class" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="type" class="form-label">Type</label>
+                            <select class="form-select" id="type" required>
+                                <option value="">Select...</option>
+                                <option value="class">Class</option>
+                                <option value="meeting">Meeting</option>
+                                <option value="personal">Personal Task</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="date" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="startTime" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="startTime" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="endTime" class="form-label">End Time</label>
+                            <input type="time" class="form-control" id="endTime" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Event</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Weekly View -->
+        <h4 style="font-family: sreda;
+            color: rgb(255, 252, 252);">Weekly Timetable</h4>
+        <div class="week-view" id="weekView" style="font-family: sreda;">
+            <!-- Days will be dynamically generated -->
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load events from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            generateWeekView();
+            loadEvents();
+        });
+
+        // Handle form submission
+        document.getElementById('eventForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('title').value.trim();
+            const type = document.getElementById('type').value;
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!title || !type || !date || !startTime || !endTime) {
+                alert('Please fill all fields.');
+                return;
+            }
+            
+            if (startTime >= endTime) {
+                alert('End time must be after start time.');
+                return;
+            }
+            
+            const event = {
+                id: Date.now(),
+                title: title,
+                type: type,
+                date: date,
+                startTime: startTime,
+                endTime: endTime
+            };
+            
+            // Save to localStorage (replace with database in production)
+            saveEvent(event);
+            
+            // Reset form
+            document.getElementById('eventForm').reset();
+            
+            // Reload events
+            loadEvents();
+        });
+
+        function saveEvent(event) {
+            const events = JSON.parse(localStorage.getItem('timetableEvents')) || [];
+            events.push(event);
+            localStorage.setItem('timetableEvents', JSON.stringify(events));
+        }
+
+        function loadEvents() {
+            const events = JSON.parse(localStorage.getItem('timetableEvents')) || [];
+            const weekView = document.getElementById('weekView');
+            
+            // Clear existing events
+            document.querySelectorAll('.event').forEach(el => el.remove());
+            
+            events.forEach(event => {
+                const eventDate = new Date(event.date);
+                const dayName = eventDate.toLocaleDateString('en-US', { weekday: 'long' });
+                const dayColumn = document.querySelector(`[data-day="${dayName}"]`);
+                
+                if (dayColumn) {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'event';
+                    eventDiv.innerHTML = `
+                        <strong>${event.title}</strong> (${event.type})<br>
+                        ${event.startTime} - ${event.endTime}
+                        <button class="btn btn-sm btn-danger ms-2" onclick="deleteEvent(${event.id})">Delete</button>
+                    `;
+                    dayColumn.appendChild(eventDiv);
+                }
+            });
+        }
+
+        function deleteEvent(id) {
+            let events = JSON.parse(localStorage.getItem('timetableEvents')) || [];
+            events = events.filter(ev => ev.id !== id);
+            localStorage.setItem('timetableEvents', JSON.stringify(events));
+            loadEvents();
+        }
+
+        function generateWeekView() {
+            const weekView = document.getElementById('weekView');
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            const today = new Date();
+            const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + 1)); // Monday
+            
+            days.forEach((day, index) => {
+                const dayDate = new Date(startOfWeek);
+                dayDate.setDate(startOfWeek.getDate() + index);
+                const dayColumn = document.createElement('div');
+                dayColumn.className = 'day-column';
+                dayColumn.setAttribute('data-day', day);
+                dayColumn.innerHTML = `<h6>${day}<br>${dayDate.toLocaleDateString()}</h6>`;
+                weekView.appendChild(dayColumn);
+            });
+        }
+    </script>
+</body>
+</html>

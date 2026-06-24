@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Expense Tracker</title>
+    <!-- Bootstrap CSS for responsive design -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 900px; margin-top: 50px; }
+        .summary { margin-bottom: 20px; }
+        body{
+            background: linear-gradient(85deg,#14001b,#20002c,#cbb4d4);
+        }
+        #title{
+            height: auto;
+            justify-items: center; 
+            text-align: center;
+            padding: 20px;
+            font-family: sreda;
+            color: rgb(255, 252, 252);
+            }
+            #logo{
+            height: 150px;
+            width: 150px;
+            border-radius: 100px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 3px solid #3498db;
+            margin-bottom: 20px;
+        }
+
+        #logo:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <center><img src="/logo.png" alt="logo" id="logo"></center>
+        <h1 class="text-center mb-4" id="title">Student Expense Tracker</h1>
+        
+        <!-- Expense Summary -->
+        <div class="card summary">
+            <div class="card-body">
+                <h5>Total Expenses: ₹<span id="totalAmount">0.00</span></h5>
+            </div>
+        </div>
+        
+        <!-- Submission Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Add a New Expense</h5>
+            </div>
+            <div class="card-body">
+                <form id="expenseForm">
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (₹)</label>
+                        <input type="number" class="form-control" id="amount" min="0.01" step="0.01" placeholder="e.g., 25.50" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="items" class="form-label">Items Purchased</label>
+                        <textarea class="form-control" id="items" rows="3" placeholder="e.g., Lunch at cafeteria, Notebook and pens" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date of Purchase</label>
+                        <input type="date" class="form-control" id="date" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Expense</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Display Expenses -->
+        <h4 style="font-family: sreda;
+            color: rgb(255, 252, 252);">Expense History</h4>
+        <div class="table-responsive">
+            <table class="table table-striped" id="expensesTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount (₹)</th>
+                        <th>Items Purchased</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Expenses will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load expenses from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExpenses();
+            updateTotal();
+        });
+
+        // Handle form submission
+        document.getElementById('expenseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const amount = parseFloat(document.getElementById('amount').value);
+            const items = document.getElementById('items').value.trim();
+            const date = document.getElementById('date').value;
+            
+            if (isNaN(amount) || amount <= 0 || !items || !date) {
+                alert('Please fill all fields correctly. Amount must be positive.');
+                return;
+            }
+            
+            const expense = {
+                id: Date.now(),
+                amount: amount,
+                items: items,
+                date: date
+            };
+            
+            // Save to localStorage (replace with database in production)
+            saveExpense(expense);
+            
+            // Reset form
+            document.getElementById('expenseForm').reset();
+            
+            // Reload expenses and update total
+            loadExpenses();
+            updateTotal();
+        });
+
+        function saveExpense(expense) {
+            const expenses = JSON.parse(localStorage.getItem('studentExpenses')) || [];
+            expenses.push(expense);
+            localStorage.setItem('studentExpenses', JSON.stringify(expenses));
+        }
+
+        function loadExpenses() {
+            const expenses = JSON.parse(localStorage.getItem('studentExpenses')) || [];
+            const tbody = document.querySelector('#expensesTable tbody');
+            tbody.innerHTML = '';
+            
+            expenses.forEach(expense => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(expense.date).toLocaleDateString()}</td>
+                    <td>${expense.amount.toFixed(2)}</td>
+                    <td>${expense.items}</td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteExpense(${expense.id})">Delete</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function deleteExpense(id) {
+            let expenses = JSON.parse(localStorage.getItem('studentExpenses')) || [];
+            expenses = expenses.filter(exp => exp.id !== id);
+            localStorage.setItem('studentExpenses', JSON.stringify(expenses));
+            loadExpenses();
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const expenses = JSON.parse(localStorage.getItem('studentExpenses')) || [];
+            const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            document.getElementById('totalAmount').textContent = total.toFixed(2);
+        }
+    </script>
+</body>
+</html>
